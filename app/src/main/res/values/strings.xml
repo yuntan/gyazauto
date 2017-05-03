@@ -1,3 +1,25 @@
 <resources>
-    <string name="app_name">gyazotest</string>
+    <string name="app_name">Gyazouto</string>
+
+    <!-- main activity -->
+    <string name="action_login">Login</string>
+    <string name="error_auth_failed">Error</string>
+
+    <!-- settings activity -->
+    <string name="title_settings">Settings</string>
+
+    <!-- preference -->
+    <string name="title_auto_upload">Auto upload</string>
+    <string name="desc_auto_upload">Automatically upload to Gyazo when you take a screenshot</string>
+    <string name="title_copy_on_upload">Copy URL on upload</string>
+
+    <!-- notification -->
+    <string name="title_notification_upload">Uploaded to Gyazo</string>
+    <string name="desc_notification_upload">Tap to open Gyazo</string>
+    <string name="action_copy">copy</string>
+    <string name="action_share">share</string>
+    <string name="action_delete">delete</string>
+    <string name="title_notification_failed">Failed to upload</string>
+    <string name="desc_notification_failed">Tap to retry</string>
+    <string name="toast_copied">"Gyazo URL copied"</string>
 </resources>

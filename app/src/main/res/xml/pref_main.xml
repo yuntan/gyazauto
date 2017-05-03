@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <SwitchPreference
+        android:defaultValue="false"
+        android:key="auto_upload_enabled"
+        android:summary="@string/desc_auto_upload"
+        android:title="@string/title_auto_upload" />
+    <SwitchPreference
+        android:defaultValue="false"
+        android:key="copy_url"
+        android:title="@string/title_copy_on_upload" />
+</PreferenceScreen>
