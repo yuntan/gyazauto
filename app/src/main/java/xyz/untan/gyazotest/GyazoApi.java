@@ -67,7 +67,7 @@ class GyazoApi {
 
     interface Api {
         String ENDPOINT_URI = "https://api.gyazo.com/";
-        String CALLBACK_URI = "gyazouto://authorize";
+        String CALLBACK_URI = "gyazauto://authorize";
 
         @POST("oauth/token"
                 + "?client_id=" + Secrets.CLIENT_ID

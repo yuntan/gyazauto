@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Gyazouto</string>
+    <string name="app_name">Gyazauto</string>
 
     <!-- main activity -->
     <string name="action_login">Login</string>

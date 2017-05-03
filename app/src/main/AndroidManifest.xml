@@ -24,7 +24,7 @@
             </intent-filter>
 
             <!-- open app from browser -->
-            <!-- gyazoauto://authorize?code=XXX -->
+            <!-- gyazauto://authorize?code=XXX -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -33,7 +33,7 @@
 
                 <data
                     android:host="authorize"
-                    android:scheme="gyazouto" />
+                    android:scheme="gyazauto" />
             </intent-filter>
         </activity>
 
