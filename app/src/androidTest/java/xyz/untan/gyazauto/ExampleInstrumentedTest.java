@@ -1,4 +1,4 @@
-package xyz.untan.gyazotest;
+package xyz.untan.gyazauto;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

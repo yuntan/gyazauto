@@ -1,4 +1,4 @@
-package xyz.untan.gyazotest;
+package xyz.untan.gyazauto;
 
 import android.content.Intent;
 import android.net.Uri;

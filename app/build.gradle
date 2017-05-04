@@ -4,7 +4,7 @@ android {
     compileSdkVersion 25
     buildToolsVersion "25.0.3"
     defaultConfig {
-        applicationId "xyz.untan.gyazotest"
+        applicationId "xyz.untan.gyazauto"
         minSdkVersion 14 // because screenshot feature is available at API 14 and newer
         targetSdkVersion 25
         versionCode 1
