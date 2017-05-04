@@ -8,10 +8,12 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.provider.MediaStore;
 import android.support.v4.app.NotificationCompat;
 import android.widget.Toast;
 
@@ -25,10 +27,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class UploadService extends Service {
-    static final String KEY_IMAGE_PATH = "image_path";
     static final String KEY_TITLE = "title";
-    static final String KEY_DESC = "desc";
-    static final String KEY_CREATED_AT = "created_at";
     static final int NOTIFY_ID = 1;
     private AppStatus _appStatus;
 
@@ -47,21 +46,36 @@ public class UploadService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        String imagePath = intent.getStringExtra(KEY_IMAGE_PATH);
+        String type = intent.getType();
+        Uri imageUri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+//        String desc = intent.getStringExtra(KEY_DESC);
+
+        // get rows from database
+        Cursor cursor = getContentResolver()
+                .query(imageUri, new String[]{
+                        MediaStore.Images.Media.DATA,
+                        MediaStore.Images.Media.DATE_ADDED
+                }, null, null, null);
+        assert cursor != null;
+        cursor.moveToFirst();
+        String imagePath = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
+        long added = cursor.getLong(cursor.getColumnIndex(MediaStore.Images.Media.DATE_ADDED));
+        cursor.close();
+
         File file = new File(imagePath);
-        RequestBody image = RequestBody.create(MediaType.parse("image/png"), file);
+        RequestBody image = RequestBody.create(MediaType.parse(type), file);
         MultipartBody.Part part = MultipartBody.Part.createFormData("imagedata", file.getName(), image);
 
-        RequestBody title = RequestBody.create(MultipartBody.FORM,
-                intent.getStringExtra(KEY_TITLE));
-        RequestBody token = RequestBody.create(MultipartBody.FORM,
-                _appStatus.accessToken);
-//        String desc = intent.getStringExtra(KEY_DESC);
-        RequestBody createdAt = RequestBody.create(MultipartBody.FORM,
-                String.valueOf(intent.getLongExtra(KEY_CREATED_AT, System.currentTimeMillis())));
+        RequestBody title = null;
+        if (intent.getStringExtra(KEY_TITLE) != null) {
+            title = RequestBody.create(MultipartBody.FORM, intent.getStringExtra(KEY_TITLE));
+        }
+        RequestBody token = RequestBody.create(MultipartBody.FORM, _appStatus.accessToken);
+        RequestBody createdAt = RequestBody.create(MultipartBody.FORM, String.valueOf(added));
 
+        // TODO show progress notification
         GyazoApi.UploadApi api = GyazoApi.getUploadApi();
-        api.upload(token, part, title, null, createdAt, null).enqueue(getCallback());
+        api.upload(token, part, null, null, createdAt, null).enqueue(getCallback());
 
         return START_STICKY;
     }

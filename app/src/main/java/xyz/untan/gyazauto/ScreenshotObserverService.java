@@ -11,7 +11,7 @@ import android.util.Log;
 
 public class ScreenshotObserverService extends Service {
     static final String TAG = ScreenshotObserverService.class.getSimpleName();
-//    private FileObserver _observer; // prevent GC
+    //    private FileObserver _observer; // prevent GC
     private ContentObserver _observer;
 
 
@@ -130,22 +130,12 @@ public class ScreenshotObserverService extends Service {
     }
 
     private void upload(Uri uri) {
-        // get rows from database
-        Cursor cursor = getContentResolver()
-                .query(uri, new String[]{
-                        MediaStore.Images.Media.DATA,
-                        MediaStore.Images.Media.DATE_ADDED
-                }, null, null, null);
-        assert cursor != null;
-        cursor.moveToFirst();
-        String path = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
-        long added = cursor.getLong(cursor.getColumnIndex(MediaStore.Images.Media.DATE_ADDED));
-        cursor.close();
-
+        // start UploadService
         Intent intent = new Intent(this, UploadService.class);
-        intent.putExtra(UploadService.KEY_IMAGE_PATH, path);
-        intent.putExtra(UploadService.KEY_TITLE, ""); // TODO get foreground app name
-        intent.putExtra(UploadService.KEY_CREATED_AT, added);
+        intent.setType("image/png");
+        intent.putExtra(Intent.EXTRA_STREAM, uri);
+//        intent.putExtra(UploadService.KEY_TITLE, ""); // TODO get foreground app name
+
         startService(intent);
     }
 }
