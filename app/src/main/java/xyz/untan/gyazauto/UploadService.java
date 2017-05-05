@@ -115,7 +115,7 @@ public class UploadService extends Service {
 
     private void showNotification(String permalinkUrl) {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext())
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(getText(R.string.title_notification_upload))
                 .setContentText(getText(R.string.desc_notification_upload))
                 .setAutoCancel(true);
@@ -143,13 +143,13 @@ public class UploadService extends Service {
                     .getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
 
             NotificationCompat.Action copyAction = new NotificationCompat.Action
-                    .Builder(R.mipmap.ic_launcher, getText(R.string.action_copy), copyActionIntent)
+                    .Builder(R.drawable.ic_share_black_24dp, getText(R.string.action_copy), copyActionIntent)
                     .build();
             NotificationCompat.Action shareAction = new NotificationCompat.Action
-                    .Builder(R.mipmap.ic_launcher, getText(R.string.action_share), shareActionIntent)
+                    .Builder(R.drawable.ic_share_black_24dp, getText(R.string.action_share), shareActionIntent)
                     .build();
             NotificationCompat.Action deleteAction = new NotificationCompat.Action
-                    .Builder(R.mipmap.ic_launcher, getText(R.string.action_delete), deleteActionIntent)
+                    .Builder(R.drawable.ic_share_black_24dp, getText(R.string.action_delete), deleteActionIntent)
                     .build();
 
             builder.setContentIntent(contentIntent)
@@ -165,7 +165,7 @@ public class UploadService extends Service {
 
     private void showErrorNotification() {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext())
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(getText(R.string.title_notification_failed))
                 .setContentText(getText(R.string.desc_notification_failed)) // TODO tap to retry
                 .setAutoCancel(true);
