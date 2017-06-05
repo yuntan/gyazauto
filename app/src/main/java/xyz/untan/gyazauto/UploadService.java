@@ -15,6 +15,7 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.ContextCompat;
 import android.widget.Toast;
 
 import java.io.File;
@@ -118,7 +119,8 @@ public class UploadService extends Service {
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(getText(R.string.title_notification_upload))
                 .setContentText(getText(R.string.desc_notification_upload))
-                .setAutoCancel(true);
+                .setAutoCancel(true)
+                .setColor(ContextCompat.getColor(this, R.color.colorPrimary));
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
             Intent openLinkIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(permalinkUrl));
@@ -143,12 +145,14 @@ public class UploadService extends Service {
                     .getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
 
             NotificationCompat.Action copyAction = new NotificationCompat.Action
+                    // FIXME change icon
                     .Builder(R.drawable.ic_share_black_24dp, getText(R.string.action_copy), copyActionIntent)
                     .build();
             NotificationCompat.Action shareAction = new NotificationCompat.Action
                     .Builder(R.drawable.ic_share_black_24dp, getText(R.string.action_share), shareActionIntent)
                     .build();
             NotificationCompat.Action deleteAction = new NotificationCompat.Action
+                    // FIXME change icon
                     .Builder(R.drawable.ic_share_black_24dp, getText(R.string.action_delete), deleteActionIntent)
                     .build();
 
