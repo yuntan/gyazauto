@@ -14,6 +14,8 @@
     <string name="title_copy_on_upload">Copy URL on upload</string>
 
     <!-- notification -->
+    <string name="title_notification_stay">Auto upload enabled</string>
+    <string name="desc_notification_stay">Tap to configure</string>
     <string name="title_notification_upload">Uploaded to Gyazo</string>
     <string name="desc_notification_upload">Tap to open Gyazo</string>
     <string name="action_copy">copy</string>
