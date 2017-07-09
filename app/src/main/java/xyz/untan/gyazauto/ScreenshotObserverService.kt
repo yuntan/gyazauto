@@ -43,6 +43,7 @@ class ScreenshotObserverService : Service() {
         contentResolver.registerContentObserver(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, _observer!!)
 
+        // prevent service killed by system
         startForeground(NOTIFY_ID, buildNotification())
 
         return Service.START_STICKY

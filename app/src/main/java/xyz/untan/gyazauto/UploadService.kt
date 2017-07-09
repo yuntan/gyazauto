@@ -30,7 +30,6 @@ class UploadService : Service() {
     companion object {
         const val KEY_TITLE = "title"
         const val KEY_DESC = "desc"
-        const val NOTIFY_ID = 1
     }
 
     val TAG: String = UploadService::class.java.simpleName
@@ -62,6 +61,7 @@ class UploadService : Service() {
         }
     }
     private var _appStatus: AppStatus? = null
+    private var _notify_id = ScreenshotObserverService.NOTIFY_ID + 1
 
     override fun onCreate() {
         super.onCreate()
@@ -84,14 +84,14 @@ class UploadService : Service() {
         val type: String? = intent.type
         val imageUri: Uri? = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
         val title: String? = intent.getStringExtra(KEY_TITLE)
-        val desc: String? = intent.getStringExtra(KEY_DESC);
+        val desc: String? = intent.getStringExtra(KEY_DESC)
 
         // get rows from database
         val cursor: Cursor? = contentResolver.query(imageUri,
                 arrayOf(MediaStore.Images.Media.DATA, MediaStore.Images.Media.DATE_ADDED),
                 null, null, null)
         if (cursor == null) {
-            Log.d(TAG, "onStartCommand: cursor is null!");
+            Log.d(TAG, "onStartCommand: cursor is null!")
             stopSelf()
             return START_NOT_STICKY
         }
@@ -104,7 +104,6 @@ class UploadService : Service() {
         val file = File(imagePath)
         val imageBody = RequestBody.create(MediaType.parse(type), file)
         val part = MultipartBody.Part.createFormData("imagedata", file.name, imageBody)
-
 
         val tokenBody = RequestBody.create(MultipartBody.FORM, _appStatus!!.accessToken!!)
         val titleBody = if (title != null) RequestBody.create(MultipartBody.FORM, title) else null
@@ -121,10 +120,13 @@ class UploadService : Service() {
     private fun showNotification(permalinkUrl: String) {
         val builder = NotificationCompat.Builder(applicationContext)
                 .setSmallIcon(R.drawable.ic_notification)
+                .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
                 .setContentTitle(getText(R.string.title_notification_upload))
                 .setContentText(getText(R.string.desc_notification_upload))
                 .setAutoCancel(true)
-                .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+
+        // TODO add thumbnail
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
             val openLinkIntent = Intent(Intent.ACTION_VIEW, Uri.parse(permalinkUrl))
@@ -167,19 +169,21 @@ class UploadService : Service() {
         }
 
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.notify(NOTIFY_ID, builder.build())
+        manager.notify(_notify_id, builder.build())
+        _notify_id++
     }
 
     private fun showErrorNotification() {
         val notification = NotificationCompat.Builder(applicationContext)
                 .setSmallIcon(R.drawable.ic_notification)
+                .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
                 .setContentTitle(getText(R.string.title_notification_failed))
                 .setContentText(getText(R.string.desc_notification_failed)) // TODO tap to retry
                 .setAutoCancel(true)
                 .build()
 
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.notify(NOTIFY_ID, notification)
-
+        manager.notify(_notify_id, notification)
+        _notify_id++
     }
 }
