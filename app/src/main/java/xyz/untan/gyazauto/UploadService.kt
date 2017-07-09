@@ -16,18 +16,51 @@ import android.preference.PreferenceManager
 import android.provider.MediaStore
 import android.support.v4.app.NotificationCompat
 import android.support.v4.content.ContextCompat
+import android.util.Log
 import android.widget.Toast
-
-import java.io.File
-
 import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.io.File
 
 class UploadService : Service() {
+    companion object {
+        const val KEY_TITLE = "title"
+        const val KEY_DESC = "desc"
+        const val NOTIFY_ID = 1
+    }
+
+    val TAG: String = UploadService::class.java.simpleName
+    private val callback = object : Callback<GyazoApi.UploadApi.UploadResponse> {
+        override fun onResponse(
+                call: Call<GyazoApi.UploadApi.UploadResponse>,
+                response: Response<GyazoApi.UploadApi.UploadResponse>) {
+            if (!response.isSuccessful) {
+                showErrorNotification()
+                return
+            }
+
+            showNotification(response.body().permalinkUrl)
+
+            if (PreferenceManager.getDefaultSharedPreferences(this@UploadService)
+                    .getBoolean(SettingsActivity.KEY_COPY_URL, false)) {
+                // copy URL
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val clip = ClipData.newUri(contentResolver, "URI",
+                        Uri.parse(response.body().permalinkUrl))
+                clipboard.primaryClip = clip
+
+                Toast.makeText(this@UploadService, R.string.toast_copied, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        override fun onFailure(call: Call<GyazoApi.UploadApi.UploadResponse>, t: Throwable) {
+            showErrorNotification()
+        }
+    }
     private var _appStatus: AppStatus? = null
 
     override fun onCreate() {
@@ -41,65 +74,49 @@ class UploadService : Service() {
         throw UnsupportedOperationException("Not yet implemented")
     }
 
-    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        val type = intent.type
-        val imageUri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
-        //        String desc = intent.getStringExtra(KEY_DESC);
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent == null) {
+            Log.d(TAG, "onStartCommand: intent is null!")
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
+        val type: String? = intent.type
+        val imageUri: Uri? = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+        val title: String? = intent.getStringExtra(KEY_TITLE)
+        val desc: String? = intent.getStringExtra(KEY_DESC);
 
         // get rows from database
-        val cursor = contentResolver
-                .query(imageUri, arrayOf(MediaStore.Images.Media.DATA, MediaStore.Images.Media.DATE_ADDED), null, null, null)!!
+        val cursor: Cursor? = contentResolver.query(imageUri,
+                arrayOf(MediaStore.Images.Media.DATA, MediaStore.Images.Media.DATE_ADDED),
+                null, null, null)
+        if (cursor == null) {
+            Log.d(TAG, "onStartCommand: cursor is null!");
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
         cursor.moveToFirst()
-        val imagePath = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA))
+        val imagePath: String? = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA))
         val added = cursor.getLong(cursor.getColumnIndex(MediaStore.Images.Media.DATE_ADDED))
         cursor.close()
 
         val file = File(imagePath)
-        val image = RequestBody.create(MediaType.parse(type), file)
-        val part = MultipartBody.Part.createFormData("imagedata", file.name, image)
+        val imageBody = RequestBody.create(MediaType.parse(type), file)
+        val part = MultipartBody.Part.createFormData("imagedata", file.name, imageBody)
 
-        var title: RequestBody? = null
-        if (intent.getStringExtra(KEY_TITLE) != null) {
-            title = RequestBody.create(MultipartBody.FORM, intent.getStringExtra(KEY_TITLE))
-        }
-        val token = RequestBody.create(MultipartBody.FORM, _appStatus!!.accessToken!!)
-        val createdAt = RequestBody.create(MultipartBody.FORM, added.toString())
+
+        val tokenBody = RequestBody.create(MultipartBody.FORM, _appStatus!!.accessToken!!)
+        val titleBody = if (title != null) RequestBody.create(MultipartBody.FORM, title) else null
+        val descBody = if (desc != null) RequestBody.create(MultipartBody.FORM, desc) else null
+        val createdAtBody = RequestBody.create(MultipartBody.FORM, added.toString())
 
         // TODO show progress notification
         val api = GyazoApi.uploadApi
-        api.upload(token, part, null!!, null!!, createdAt, null!!).enqueue(callback)
+        api.upload(tokenBody, part, titleBody, descBody, createdAtBody, null).enqueue(callback)
 
-        return Service.START_STICKY
+        return START_STICKY
     }
-
-    private // copy URL
-    val callback: Callback<GyazoApi.UploadApi.UploadResponse>
-        get() = object : Callback<GyazoApi.UploadApi.UploadResponse> {
-            override fun onResponse(
-                    call: Call<GyazoApi.UploadApi.UploadResponse>,
-                    response: Response<GyazoApi.UploadApi.UploadResponse>) {
-                if (!response.isSuccessful) {
-                    showErrorNotification()
-                    return
-                }
-
-                showNotification(response.body().getPermalinkUrl())
-
-                if (PreferenceManager.getDefaultSharedPreferences(this@UploadService)
-                        .getBoolean(SettingsActivity.getKEY_COPY_URL(), false)) {
-                    val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    val clip = ClipData.newUri(contentResolver, "URI",
-                            Uri.parse(response.body().getPermalinkUrl()))
-                    clipboard.primaryClip = clip
-
-                    Toast.makeText(this@UploadService, R.string.toast_copied, Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            override fun onFailure(call: Call<GyazoApi.UploadApi.UploadResponse>, t: Throwable) {
-                showErrorNotification()
-            }
-        }
 
     private fun showNotification(permalinkUrl: String) {
         val builder = NotificationCompat.Builder(applicationContext)
@@ -131,14 +148,17 @@ class UploadService : Service() {
                     .addNextIntent(Intent()) // FIXME intent to call delete api
                     .getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT)
 
-            val copyAction = NotificationCompat.Action.Builder// FIXME change icon
-            R.drawable.ic_share_black_24dp, getText(R.string.action_copy), copyActionIntent)
-            .build()
-            val shareAction = NotificationCompat.Action.Builder(R.drawable.ic_share_black_24dp, getText(R.string.action_share), shareActionIntent)
+            val copyAction = NotificationCompat.Action
+                    // FIXME change icon
+                    .Builder(R.drawable.ic_share_black_24dp, getText(R.string.action_copy), copyActionIntent)
                     .build()
-            val deleteAction = NotificationCompat.Action.Builder// FIXME change icon
-            R.drawable.ic_share_black_24dp, getText(R.string.action_delete), deleteActionIntent)
-            .build()
+            val shareAction = NotificationCompat.Action
+                    .Builder(R.drawable.ic_share_black_24dp, getText(R.string.action_share), shareActionIntent)
+                    .build()
+            val deleteAction = NotificationCompat.Action
+                    // FIXME change icon
+                    .Builder(R.drawable.ic_share_black_24dp, getText(R.string.action_delete), deleteActionIntent)
+                    .build()
 
             builder.setContentIntent(contentIntent)
                     //                    .addAction(copyAction)
@@ -151,19 +171,15 @@ class UploadService : Service() {
     }
 
     private fun showErrorNotification() {
-        val builder = NotificationCompat.Builder(applicationContext)
+        val notification = NotificationCompat.Builder(applicationContext)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(getText(R.string.title_notification_failed))
                 .setContentText(getText(R.string.desc_notification_failed)) // TODO tap to retry
                 .setAutoCancel(true)
+                .build()
 
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.notify(NOTIFY_ID, builder.build())
+        manager.notify(NOTIFY_ID, notification)
 
-    }
-
-    companion object {
-        internal val KEY_TITLE = "title"
-        internal val NOTIFY_ID = 1
     }
 }

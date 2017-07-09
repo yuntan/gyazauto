@@ -10,23 +10,26 @@ class ShareActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        var intent = intent
-        val action = intent.action
-        val type = intent.type
-        val imageUri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+        val intent: Intent? = intent
+        if (intent == null) {
+            finish()
+            return
+        }
 
-        if (!(action != null && action == Intent.ACTION_SEND
-                && type != null && type.startsWith("image/")
+        val imageUri: Uri? = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+
+        if (!(intent.action == Intent.ACTION_SEND && intent.type?.startsWith("image/") ?: false
                 && imageUri != null)) {
             return
         }
 
         // start UploadService
-        intent = Intent(this, UploadService::class.java)
-        intent.type = type
-        intent.putExtra(Intent.EXTRA_STREAM, imageUri)
+        val newIntent = Intent(this, UploadService::class.java).apply {
+            type = intent.type
+            putExtra(Intent.EXTRA_STREAM, imageUri)
+        }
 
-        startService(intent)
+        startService(newIntent)
 
         finish() // no need to show activity
     }

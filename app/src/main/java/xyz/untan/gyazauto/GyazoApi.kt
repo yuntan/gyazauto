@@ -2,11 +2,8 @@ package xyz.untan.gyazauto
 
 import android.content.Intent
 import android.net.Uri
-
 import com.google.gson.FieldNamingPolicy
-import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody
@@ -14,58 +11,55 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.DELETE
-import retrofit2.http.Multipart
-import retrofit2.http.POST
-import retrofit2.http.Part
-import retrofit2.http.Path
-import retrofit2.http.Query
-
+import retrofit2.http.*
 
 internal object GyazoApi {
-
     val authorizeIntent: Intent
-        get() {
-            val uri = GyazoApi.Api.ENDPOINT_URI + "oauth/authorize"
-            +"?client_id=" + Secrets.CLIENT_ID
-            +"&redirect_uri=" + GyazoApi.Api.CALLBACK_URI
-            +"&response_type=code"
-            return Intent(Intent.ACTION_VIEW, Uri.parse(uri))
-        }
-
     val api: Api
-        get() = builder
+    val uploadApi: UploadApi
+    private val builder: Retrofit.Builder
+
+    init {
+        val client = OkHttpClient.Builder().apply {
+            if (BuildConfig.DEBUG) { // debug logging
+                val logging = HttpLoggingInterceptor()
+                logging.level = HttpLoggingInterceptor.Level.BASIC
+                addInterceptor(logging)
+            }
+        }.build()
+
+        val gson = GsonBuilder()
+                // ex. accessToken -> access_token
+                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+                .create()
+
+        builder = Retrofit.Builder()
+                .client(client)
+                .addConverterFactory(GsonConverterFactory.create(gson))
+
+        api = builder
                 .baseUrl(Api.ENDPOINT_URI)
                 .build()
                 .create(Api::class.java)
 
-    val uploadApi: UploadApi
-        get() = builder
+        uploadApi = builder
                 .baseUrl(UploadApi.ENDPOINT_URI)
                 .build()
                 .create(UploadApi::class.java)
 
-    private // debug logging
-            // ex. accessToken -> access_token
-    val builder: Retrofit.Builder
-        get() {
-            val builder = OkHttpClient.Builder()
-            if (BuildConfig.DEBUG) {
-                val logging = HttpLoggingInterceptor()
-                logging.level = HttpLoggingInterceptor.Level.BASIC
-                builder.addInterceptor(logging)
-            }
+        val uri = (GyazoApi.Api.ENDPOINT_URI + "oauth/authorize"
+                + "?client_id=" + Secrets.CLIENT_ID
+                + "&redirect_uri=" + GyazoApi.Api.CALLBACK_URI
+                + "&response_type=code")
 
-            val gson = GsonBuilder()
-                    .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-                    .create()
-
-            return Retrofit.Builder()
-                    .client(builder.build())
-                    .addConverterFactory(GsonConverterFactory.create(gson))
-        }
+        authorizeIntent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
+    }
 
     internal interface Api {
+        companion object {
+            const val ENDPOINT_URI = "https://api.gyazo.com/"
+            const val CALLBACK_URI = "gyazauto://authorize"
+        }
 
         @POST("oauth/token"
                 + "?client_id=" + Secrets.CLIENT_ID
@@ -80,45 +74,39 @@ internal object GyazoApi {
                 @Query("access_token") token: String): Call<DeleteResponse>
 
         class TokenResponse {
-            internal var accessToken: String? = null
-            internal var tokenType: String? = null
-            internal var scope: String? = null
+            internal var accessToken: String = ""
+            internal var tokenType: String = ""
+            internal var scope: String = ""
         }
 
         class DeleteResponse {
-            internal var imageId: String? = null
-            internal var type: String? = null
-        }
-
-        companion object {
-            val ENDPOINT_URI = "https://api.gyazo.com/"
-            val CALLBACK_URI = "gyazauto://authorize"
+            internal var imageId: String = ""
+            internal var type: String = ""
         }
     }
 
     // https://futurestud.io/tutorials/retrofit-2-how-to-upload-files-to-server
     internal interface UploadApi {
+        companion object {
+            const val ENDPOINT_URI = "https://upload.gyazo.com/"
+        }
 
         @Multipart
         @POST("api/upload")
         fun upload(
                 @Part("access_token") token: RequestBody,
                 @Part image: MultipartBody.Part,
-                @Part("title") title: RequestBody,
-                @Part("desc") desc: RequestBody,
-                @Part("created_at") createdAt: RequestBody,
-                @Part("collection_id") collectionId: RequestBody): Call<UploadResponse>
+                @Part("title") title: RequestBody?,
+                @Part("desc") desc: RequestBody?,
+                @Part("created_at") createdAt: RequestBody?,
+                @Part("collection_id") collectionId: RequestBody?): Call<UploadResponse>
 
         class UploadResponse {
-            internal var imageId: String? = null
-            internal var permalinkUrl: String? = null
-            internal var thumbUrl: String? = null
-            internal var url: String? = null
-            internal var type: String? = null
-        }
-
-        companion object {
-            val ENDPOINT_URI = "https://upload.gyazo.com/"
+            internal var imageId: String = ""
+            internal var permalinkUrl: String = ""
+            internal var thumbUrl: String = ""
+            internal var url: String = ""
+            internal var type: String = ""
         }
     }
 }

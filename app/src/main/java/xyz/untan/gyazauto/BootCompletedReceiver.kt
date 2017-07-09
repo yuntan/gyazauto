@@ -10,6 +10,7 @@ import android.support.v4.content.ContextCompat
 import android.util.Log
 
 class BootCompletedReceiver : BroadcastReceiver() {
+    val TAG: String = BootCompletedReceiver::class.java.simpleName
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) {
@@ -20,7 +21,9 @@ class BootCompletedReceiver : BroadcastReceiver() {
         val autoUploadEnabled = PreferenceManager
                 .getDefaultSharedPreferences(context)
                 .getBoolean(SettingsActivity.KEY_AUTO_UPLOAD, false)
-        val readStorageGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+        val readStorageGranted = ContextCompat.checkSelfPermission(
+                context, Manifest.permission.READ_EXTERNAL_STORAGE
+        ) == PackageManager.PERMISSION_GRANTED
 
         if (autoUploadEnabled && readStorageGranted) {
             // start ScreenshotObserverService
@@ -28,9 +31,5 @@ class BootCompletedReceiver : BroadcastReceiver() {
             serviceIntent.action = Intent.ACTION_BOOT_COMPLETED
             context.startService(serviceIntent)
         }
-    }
-
-    companion object {
-        private val TAG = BootCompletedReceiver::class.java.simpleName
     }
 }

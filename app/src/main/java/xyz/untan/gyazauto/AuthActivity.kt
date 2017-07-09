@@ -4,14 +4,11 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.view.View
 import android.widget.Button
 import android.widget.Toast
-
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-
 
 class AuthActivity : AppCompatActivity() {
     // SharedPreference util
@@ -30,7 +27,7 @@ class AuthActivity : AppCompatActivity() {
             finish() // make sure don't get back to this activity
         }
 
-        if (_appStatus!!.accessToken != null && !_appStatus!!.accessToken!!.isEmpty()) {
+        if (!_appStatus!!.accessToken.isNullOrEmpty()) {
             startActivity(Intent(this, SettingsActivity::class.java))
             finish()
         }
@@ -39,7 +36,7 @@ class AuthActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
 
-        val uri = intent.data
+        val uri: Uri? = intent.data
         if (uri != null) { // callback from gyazo
             onIntentCallback(uri)
         }
@@ -48,7 +45,7 @@ class AuthActivity : AppCompatActivity() {
     private fun onIntentCallback(uri: Uri) {
         // get authorization code
         val code = uri.getQueryParameter("code")
-        if (code == null || code.isEmpty()) {
+        if (code.isEmpty()) {
             showErrorToast()
             return
         }

@@ -13,6 +13,12 @@ import android.support.v7.app.AppCompatActivity
 import android.util.Log
 
 class SettingsActivity : AppCompatActivity(), SharedPreferences.OnSharedPreferenceChangeListener {
+    companion object {
+        const val KEY_AUTO_UPLOAD = "auto_upload_enabled"
+        const val KEY_COPY_URL = "copy_url"
+        const val PERMISSIONS_REQUEST_CODE = 1
+    }
+    val TAG: String = SettingsActivity::class.java.simpleName
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,7 +29,8 @@ class SettingsActivity : AppCompatActivity(), SharedPreferences.OnSharedPreferen
                 .commit()
 
         // check storage permission
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                == PackageManager.PERMISSION_DENIED) {
             Log.d(TAG, "onCreate: storage access DENIED, show request dialog")
             ActivityCompat.requestPermissions(this,
                     arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
@@ -48,7 +55,8 @@ class SettingsActivity : AppCompatActivity(), SharedPreferences.OnSharedPreferen
         if (requestCode != PERMISSIONS_REQUEST_CODE) {
             return
         }
-        val granted = grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED
+        val granted = grantResults.isNotEmpty()
+                && grantResults[0] == PackageManager.PERMISSION_GRANTED
         if (granted) {
             Log.d(TAG, "onRequestPermissionsResult: request GRANTED")
             startService(Intent(this, ScreenshotObserverService::class.java))
@@ -85,12 +93,5 @@ class SettingsActivity : AppCompatActivity(), SharedPreferences.OnSharedPreferen
             preferenceScreen.sharedPreferences
                     .unregisterOnSharedPreferenceChangeListener(activity as SettingsActivity)
         }
-    }
-
-    companion object {
-        internal val TAG = SettingsActivity::class.java.simpleName
-        internal val KEY_AUTO_UPLOAD = "auto_upload_enabled"
-        internal val KEY_COPY_URL = "copy_url"
-        internal val PERMISSIONS_REQUEST_CODE = 1
     }
 }

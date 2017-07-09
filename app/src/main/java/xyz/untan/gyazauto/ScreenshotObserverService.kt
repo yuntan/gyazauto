@@ -5,7 +5,6 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.database.ContentObserver
-import android.database.Cursor
 import android.net.Uri
 import android.os.IBinder
 import android.provider.MediaStore
@@ -15,9 +14,12 @@ import android.support.v4.content.ContextCompat
 import android.util.Log
 
 class ScreenshotObserverService : Service() {
+    companion object {
+        const val NOTIFY_ID = 1
+    }
+    val TAG: String = ScreenshotObserverService::class.java.simpleName
     //    private FileObserver _observer; // prevent GC
     private var _observer: ContentObserver? = null
-
 
     override fun onCreate() {
         super.onCreate()
@@ -32,11 +34,9 @@ class ScreenshotObserverService : Service() {
         throw UnsupportedOperationException("Not yet implemented")
     }
 
-    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        val action = intent.action
-        if (action != null) {
-            Log.d(TAG, "onStartCommand: action: " + action)
-        }
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val action: String? = intent?.action
+        Log.d(TAG, "onStartCommand: action: " + action)
 
         Log.d(TAG, "onStartCommand: start watching")
         //        _observer.startWatching();
@@ -104,7 +104,7 @@ class ScreenshotObserverService : Service() {
                 // What is `selfChange` ?
                 Log.d(TAG, "onChange: selfChange: $selfChange, uri: $uri")
 
-                if (filterUri(uri)) {
+                if (uri != null && filterUri(uri)) {
                     upload(uri)
                 }
             }
@@ -133,11 +133,11 @@ class ScreenshotObserverService : Service() {
 
     private fun upload(uri: Uri) {
         // start UploadService
-        val intent = Intent(this, UploadService::class.java)
-        intent.type = "image/png"
-        intent.putExtra(Intent.EXTRA_STREAM, uri)
-        //        intent.putExtra(UploadService.KEY_TITLE, ""); // TODO get foreground app name
-
+        val intent = Intent(this, UploadService::class.java).apply {
+            type = "image/png"
+            putExtra(Intent.EXTRA_STREAM, uri)
+//            putExtra(UploadService.KEY_TITLE, "") // TODO get foreground app name
+        }
         startService(intent)
     }
 
@@ -157,10 +157,5 @@ class ScreenshotObserverService : Service() {
                 // hide icon on notification bar
                 .setPriority(NotificationCompat.PRIORITY_MIN)
                 .build()
-    }
-
-    companion object {
-        internal val TAG = ScreenshotObserverService::class.java.simpleName
-        internal val NOTIFY_ID = 1
     }
 }
